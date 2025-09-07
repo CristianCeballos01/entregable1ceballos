@@ -1,5 +1,4 @@
 // Preguntas del juego.
-
 const preguntasJuego = [
   {
     id: 1,
@@ -123,56 +122,91 @@ const preguntasJuego = [
   }
 ];
 
+// Variables y constantes para el juego
 const elementoPregunta = document.getElementById("pregunta");
 const elementoOpciones = document.getElementById("opciones");
-const elementoPuntaje = document.createElement("p");
-document.body.appendChild(elementoPuntaje);
 
 let preguntaIndex = 0;
 let puntaje = 0;
+let usuarioActual = {}; // Objeto para el usuario y su puntaje
 
-function mostrarPuntaje() {
-    elementoPuntaje.innerText = `Puntaje: ${puntaje}`;
+// --- Funciones del juego ---
+
+// Función para solicitar el nombre del usuario (Registro)
+function solicitarUsuario() {
+  const nombre = prompt("¡Bienvenido! Ingresa tu nombre o alias:");
+  if (nombre) {
+    usuarioActual.nombre = nombre;
+  } else {
+    usuarioActual.nombre = "Invitado";
+  }
+  console.log("Usuario registrado: " + usuarioActual.nombre);
 }
 
+// Función para mostrar la pregunta en la pantalla
 function mostrarPregunta(index) {
-    const preguntaActual = preguntasJuego[index];
-    
-    if (!preguntaActual) {
-        return;
-    }
+  const preguntaActual = preguntasJuego[index];
 
-    elementoPregunta.innerText = preguntaActual.pregunta;
-    elementoOpciones.innerHTML = "";
+  if (!preguntaActual) {
+    return;
+  }
 
-    preguntaActual.opciones.forEach(opcion => {
-        const boton = document.createElement("button");
-        boton.innerText = opcion;
-        elementoOpciones.appendChild(boton);
+  elementoPregunta.innerText = preguntaActual.pregunta;
+  elementoOpciones.innerHTML = "";
 
-        boton.addEventListener("click", () => {
-            if (opcion === preguntaActual.respuestaCorrecta) {
-                puntaje++; 
-                mostrarPuntaje();
+  // Bucle para crear los botones de opciones
+  preguntaActual.opciones.forEach(opcion => {
+    const boton = document.createElement("button");
+    boton.innerText = opcion;
+    elementoOpciones.appendChild(boton);
 
-                preguntaIndex++;
-                
-                if (preguntaIndex < preguntasJuego.length) {
-                    mostrarPregunta(preguntaIndex);
-                } else {
-                    guardarPuntaje(); 
-                    alert(`¡Felicitaciones! Terminaste el juego. Tu puntaje final es: ${puntaje}`);
-                }
-            } else {
-                alert("Respuesta Incorrecta. El Cuti te va a meter una plancha.");
-            }
-        });
+    // Lógica al hacer clic en un botón
+    boton.addEventListener("click", () => {
+      // 1. Verificamos si la respuesta es correcta
+      if (opcion === preguntaActual.respuestaCorrecta) {
+        puntaje++;
+        console.log("¡Respuesta correcta! Puntaje: " + puntaje);
+      } else {
+        console.log("Respuesta incorrecta. Puntaje: " + puntaje);
+      }
+
+      // 2. Pasamos a la siguiente pregunta sin importar la respuesta
+      preguntaIndex++;
+
+      // 3. Verificamos si el juego terminó
+      if (preguntaIndex < preguntasJuego.length) {
+        mostrarPregunta(preguntaIndex);
+      } else {
+        alert(`¡Felicitaciones ${usuarioActual.nombre}! Terminaste el juego. Tu puntaje final es: ${puntaje}`);
+        guardarPuntajeEnStorage(usuarioActual.nombre, puntaje);
+      }
     });
+  });
 }
 
-function guardarPuntaje() {
-    localStorage.setItem("puntajeFinal", puntaje.toString());
+// Función de orden superior para guardar el puntaje en el Storage
+function guardarPuntajeEnStorage(nombre, puntaje) {
+    let puntajesGuardados = JSON.parse(localStorage.getItem('ranking')) || [];
+
+    // Verificamos si el usuario ya existe en el ranking (con find)
+    const usuarioExistente = puntajesGuardados.find(user => user.nombre === nombre);
+
+    if (usuarioExistente) {
+        // Si el usuario existe, actualizamos su puntaje si el nuevo es mayor
+        if (puntaje > usuarioExistente.puntaje) {
+            usuarioExistente.puntaje = puntaje;
+            console.log("Puntaje de usuario actualizado en el ranking.");
+        }
+    } else {
+        // Si no existe, agregamos el nuevo usuario al ranking
+        puntajesGuardados.push({ nombre, puntaje });
+        console.log("Nuevo usuario agregado al ranking.");
+    }
+    
+    // Guardamos la lista actualizada de puntajes en el localStorage
+    localStorage.setItem('ranking', JSON.stringify(puntajesGuardados));
 }
 
+// --- Llamadas para iniciar el juego ---
+solicitarUsuario();
 mostrarPregunta(preguntaIndex);
-mostrarPuntaje();
